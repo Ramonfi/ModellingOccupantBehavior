@@ -3,10 +3,10 @@ import pandas as pd
 from pandas import IndexSlice as IDX
 import matplotlib.pyplot as plt
 import matplotlib as mpl
-import RomansThesis.style as style
-from RomansThesis.style import BUID, APPS, ROOMS, CLRS
-import RomansThesis.toolbox as tb
-import RomansThesis.preprocessing as pp
+from .import style
+from .style import BUID, APPS, ROOMS, CLRS
+from . import toolbox as tb
+from .import database as pp
 
 def sync_xaxis(axs):
     _min, _max = tuple(map(list, zip(*[list(a.get_xlim()) for a in axs])))
@@ -24,10 +24,10 @@ def sync_yaxis(axs):
 
 def plotOverview(bui='LB', app='N', start='2022-01-01', end='2022-01-03', show_window_ticks = True):
     try:
-        from RomansThesis.preprocessing import DB, AMB, IND
+        from RomansThesis.database import DB, AMB, IND
     except ImportError:
         pp.getDB()
-        from RomansThesis.preprocessing import  DB, AMB, IND
+        from RomansThesis.database import  DB, AMB, IND
     spacing = 2.2
     markersize = 4
     markevery = 120
@@ -197,10 +197,10 @@ def plotOverview(bui='LB', app='N', start='2022-01-01', end='2022-01-03', show_w
 
 def plotHK_IO_simple(bui, app, start, ende):
     try:
-        from RomansThesis.preprocessing import DB, AMB, IND
+        from RomansThesis.database import DB, AMB, IND
     except ImportError:
         pp.getDB()
-        from RomansThesis.preprocessing import DB, AMB, IND
+        from RomansThesis.database import DB, AMB, IND
     fig, axs = plt.subplots(
         2, 1, figsize=style.DIN['A5L'], sharex=True, sharey=True)
     fig.suptitle(f'{BUID[bui]} | {APPS[app]}')
@@ -276,10 +276,10 @@ def plotHK_IO_simple(bui, app, start, ende):
 
 def plotCompareLüftungAPP(bui, app, focus_room, _df):
     try:
-        from RomansThesis.preprocessing import DB, AMB, IND
+        from RomansThesis.database import DB, AMB, IND
     except ImportError:
         pp.getDB()
-        from RomansThesis.preprocessing import DB, AMB, IND
+        from RomansThesis.database import DB, AMB, IND
     opening_time = _df.iloc[1]['Datetime']['first']
     closing_time = _df.iloc[-2]['Datetime']['last']
 
@@ -344,10 +344,10 @@ def plotCompareLüftungAPP(bui, app, focus_room, _df):
 
 def plotLüftung(bui, app, room):
     try:
-        from RomansThesis.preprocessing import DB, AMB, IND
+        from RomansThesis.database import DB, AMB, IND
     except ImportError:
         pp.getDB()
-        from RomansThesis.preprocessing import DB, AMB, IND
+        from RomansThesis.database import DB, AMB, IND
     _id, df_airnode, df, data = pp.getLüftungsDatasets(bui, app, room)
     fig, ax = plt.subplots(sharex=True)
     fig.suptitle(f'{BUID[bui]} | Wohnung {APPS[app]} | {ROOMS[room]}')
@@ -421,10 +421,10 @@ def plotLüftung(bui, app, room):
 
 def plotLüftungsKlassifikation():
     try:
-        from RomansThesis.preprocessing import DB, AMB, IND
+        from RomansThesis.database import DB, AMB, IND
     except ImportError:
         pp.getDB()
-        from RomansThesis.preprocessing import DB, AMB, IND
+        from RomansThesis.database import DB, AMB, IND
     DB_WINDOW = DB.loc[(DB.loc[:, IDX[:, :, :, 'Fensteröffnung']] > 0).any(axis=1) | (
         DB.loc[:, IDX[:, :, :, 'Fensteröffnung']] < 0).any(axis=1), IDX[:, :, ['WZ', 'SZ', 'K'], :]]
 

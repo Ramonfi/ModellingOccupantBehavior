@@ -15,8 +15,8 @@ import pandas as pd
 import matplotlib.pyplot as plt
 from matplotlib.patches import Patch
 
-from RomansThesis.toolbox.utils import running_bar
-from RomansThesis.toolbox.comf import KelvinstundenEN, KelvinstundenNA
+from .toolbox.utils import running_bar
+from .toolbox.comf import KelvinstundenEN, KelvinstundenNA
 tab = ' '
 
 class Weekschedule:

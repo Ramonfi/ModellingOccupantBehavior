@@ -1,0 +1,7 @@
+seaborn
+meteostat
+scikit-learn
+statsmodels
+geopy
+timezonefinder
+pythermalcomfort

@@ -6,7 +6,7 @@ import pandas as pd
 import matplotlib.pyplot as plt
 import matplotlib as mpl
 import seaborn as sns
-from src import style
+from .. import style
 from sklearn.linear_model import LogisticRegressionCV, LogisticRegression
 from sklearn.feature_selection import SequentialFeatureSelector, SelectFromModel
 from sklearn.preprocessing import StandardScaler

@@ -12,7 +12,7 @@ import matplotlib as mpl
 import matplotlib.pyplot as plt
 
 import seaborn as sns
-import RomansThesis.style as style
+from .. import style
 
 def transparentcmap(cmap):
     my_cmap = cmap(np.arange(cmap.N))
@@ -312,7 +312,7 @@ def KelvinstundenNA(Temp, Tamb, plot=False):
             _data.where(kh.ÜTGS.notna()).plot(x='T_amb', y='Temp', ls='None', marker='.', color='red', ax=ax, label='ÜTGS')  
         return kh
 
-def adaptive_comfort_NA(Tamb=None, Top=None, Tair=None, ax=None, kind='scatter', figsize=None, scale='lin', highlight=False, title=None, annotate=True, **kwargs):
+def adaptive_comfort_NA(Tamb=None, Top=None, Tair=None, ax=None, kind='scatter', figsize=None, scale='lin', highlight=False, title=None, annotate=True, print_timespan=False, **kwargs):
     """
     Erstelle ein Diagramm zur Evaluation des thermischen Komoforts nach DIN EN 16798-1:2022 - NA
 
@@ -440,12 +440,17 @@ def adaptive_comfort_NA(Tamb=None, Top=None, Tair=None, ax=None, kind='scatter',
     elif mode == 'Tair':
         ax.set_ylabel('Lufttemperatur [°C]')
 
-    if title is None:
+    if (title is None) and (print_timespan == False):
         pass
-    elif title is True:
+    elif (title is True) and (print_timespan == False):
         ax.set_title('Adaptives Komfortmodell nach DIN EN 16798:2022 - NA', loc='left', y=1.1)
-    elif isinstance(title, str):
-        ax.set_title(title, loc='left')
+    elif (title is True) and (print_timespan == True):
+        ax.set_title(f'Adaptives Komfortmodell nach DIN EN 16798:2022 - NA\n{df.index.min():%d.%m.%y} bis {df.index.max():%d.%m.%y}', loc='left', y=1.1)
+    elif isinstance(title, str) and (print_timespan == False):
+        ax.set_title(f'{title}')
+    elif isinstance(title, str) and (print_timespan == True):
+        ax.set_title(f'{title}\n{df.index.min():%d.%m.%y} bis {df.index.max():%d.%m.%y}', loc='left')
+        
     if not empty:
         if kind.lower() == 'scatter':
             han, = ax.plot(df['Tamb'], df['Temp'], **plot_kwargs)
@@ -538,7 +543,7 @@ def KelvinstundenEN(Temp, Tamb=None, Tamb_g24=None, kat='II', join=False, plot=F
                 kh = kh.droplevel(1, axis=1)
         return kh
 
-def adaptive_comfort_EN(Tamb:pd.Series=None, Top:pd.Series=None, Tair = None, ax:plt.Axes=None, kind='scatter', figsize=None,  highlight=False, scale='log', annotate=True, kat:str = 'II', title:str=None, ms:float = None, legend_ms:float = None, **kwargs) -> plt.Axes:
+def adaptive_comfort_EN(Tamb:pd.Series=None, Top:pd.Series=None, Tair = None, ax:plt.Axes=None, kind='scatter', figsize=None,  highlight=False, scale='log', annotate=True, kat:str = 'II', title:str=None, print_timespan=False, ms:float = None, legend_ms:float = None, **kwargs) -> plt.Axes:
     """
     Erstelle ein Diagramm zur Evaluation des thermischen Komoforts nach DIN EN 16798-1 - Anhang B2.2.
 
@@ -679,13 +684,16 @@ def adaptive_comfort_EN(Tamb:pd.Series=None, Top:pd.Series=None, Tair = None, ax
     if mode=='Top':
         ax.set_ylabel('operative Raumtemperatur [°C]')
         
-    if (title is None):
+    if (title is None) and (print_timespan == False):
         pass
-    elif (title is True):
+    elif (title is True) and (print_timespan == False):
         ax.set_title('Adaptives Komfortmodell nach DIN EN 16798-1 - Anhang B2.2',loc='left', y=1.1)
-    elif isinstance(title, str):
-        #fig.suptitle('Adaptives Komfortmodell nach DIN EN 16798-1 - Anhang B2.2',x=0.08, y=1.01, ha='left')
-        ax.set_title(title)
+    elif (title is True) and (print_timespan == True):
+        ax.set_title(f'Adaptives Komfortmodell nach DIN EN 16798-1 - Anhang B2.2\n{df.index.min():%d.%m.%y} bis {df.index.max():%d.%m.%y}',loc='left', y=1)
+    elif isinstance(title, str) and (print_timespan == True):
+        ax.set_title(f'{title}\n{df.index.min():%d.%m.%y} bis {df.index.max():%d.%m.%y}')
+    elif isinstance(title, str) and (print_timespan == False):
+        ax.set_title(f'{title}')
 
     if not empty:
         df=df[(df.T_amb_g24 >10) & (df.T_amb_g24 < 30)].dropna()
@@ -752,6 +760,13 @@ class hxdiagramm():
             self.fig = plt.gcf()
         _fig, _ax = self.fig, self.ax
 
+        if 'print_timespan' in kwargs:
+            self.print_timespan = kwargs['print_timespan']
+            self.timespan = []
+            del kwargs['print_timespan']
+        else:
+            self.print_timespan = False
+
         if 'cmap' in kwargs:
             cmap = kwargs['cmap']
             del kwargs['cmap']
@@ -808,12 +823,20 @@ class hxdiagramm():
         self.comfort = comdf
         
         _ax.set(ylim=self._ylim, xlim=self._xlim, xlabel=r'Lufttemperatur [\si{\celsius}]', ylabel=r'Absolute Luftfeuchte [\si{\gram\per\kilogram}]')
+
         if title is None:
-            pass
+            self.title = ''
         elif title is True:
-            _ax.set_title('H,x - Diagramm nach DIN 1946-6', loc = 'left')
+            self.title = 'H,x - Diagramm nach DIN 1946-6'
         elif isinstance(title, str):
-            _ax.set_title(title, loc = 'left')
+            self.title = title
+
+        # if title is None:
+        #     pass
+        # elif title is True:
+        #     _ax.set_title('H,x - Diagramm nach DIN 1946-6', loc = 'left')
+        # elif isinstance(title, str):
+        #     _ax.set_title(title, loc = 'left')
 
         _ax.xaxis.set_major_locator(mpl.ticker.MaxNLocator(steps=[2,4,5,10]))
         _ax.yaxis.set_major_locator(mpl.ticker.MaxNLocator(steps=[2,4,5,10]))
@@ -849,7 +872,9 @@ class hxdiagramm():
         ys = [y0, y1, y2, y3, y4, y5, y0]
         
         ax1.plot(xs, ys, ls='dashed', color='k', zorder=100)
-
+        if self.print_timespan == True:
+            self.title = f'{self.title}\n{min(self.timespan):%d.%m.%y} bis {max(self.timespan):%d.%m.%y}'
+        _ax.set_title(self.title, loc = 'left')
         _fig.tight_layout()
         if kind == 'hist' and cbar:
             self._add_colorbar()
@@ -937,6 +962,8 @@ class hxdiagramm():
         return my_cmap
 
     def _plotData(self, df, label):
+        self.timespan.append(df.index.min())
+        self.timespan.append(df.index.max())
         n_comf = df['comfort'].mean()
         label = f'{label}: ${n_comf*100:.0f}\\%$'
         if self._kind == 'scatter':
