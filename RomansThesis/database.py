@@ -244,7 +244,7 @@ def getTset(_df, qt=0.75):
     '''
     return _df.quantile(qt, interpolation='nearest').round()
 
-def scan_eb_folder(dir_db = './_db/eb-database'):
+def scan_eb_folder(dir_db = './data/eb-database'):
     global files
     files = {}
     for meter in ['tf','em']:
@@ -465,17 +465,17 @@ def getAMB(update = False):
         df.columns = df.columns.str.split(' ',expand=True).droplevel(level=1).str.lower()
         return df
     
-    if not os.path.isfile('./_db/robustDBs/AMB.pkl'):
+    if not os.path.isfile('./data/robustDBs/AMB.pkl'):
         print('Es wurde keine Wetter Datenbank gefunden. Es wird eine neue aus dne Rohdaten erstellt')
         update = True
     if update:
         print('Aktualisiere WetterDB...                                                              ')
         AMB = pd.merge(getWeatherdata(), getPyranometer(), left_index=True, right_index=True)
         #AMB['season'] = AMB.index.to_series().apply(tb.utils.get_season)
-        AMB.to_pickle('./_db/robustDBs/AMB.pkl')
+        AMB.to_pickle('./data/robustDBs/AMB.pkl')
     else:
         print('Lade WetterDB...')
-        AMB = pd.read_pickle('./_db/robustDBs/AMB.pkl')
+        AMB = pd.read_pickle('./data/robustDBs/AMB.pkl')
     return AMB
 
 ### TinkerForge Raumklima DB
@@ -522,7 +522,7 @@ def getIND(update = False):
         
         return df
 
-    if not os.path.isfile('./_db/robustDBs/IND.pkl'):
+    if not os.path.isfile('./data/robustDBs/IND.pkl'):
         print('Es wurde keine Raumklima Datenbank gefunden. Es wird eine neue aus dne Rohdaten erstellt')
         update = True
     
@@ -583,10 +583,10 @@ def getIND(update = False):
                 for i, row in summary.iterrows():
                     p_log.info(f'{bui}-{app}-{room}: {sensor}: Fehlerhafte Daten von {row["Start"]} bis {row["End"]}')
         p_log.info('Speichere aktualisierte Datenbank ab...')
-        IND.to_pickle('_db/robustDBs/IND.pkl')
+        IND.to_pickle('data/robustDBs/IND.pkl')
     else:
         print('Lade Raumklima...')
-        IND = pd.read_pickle('./_db/robustDBs/IND.pkl')
+        IND = pd.read_pickle('./data/robustDBs/IND.pkl')
     
     return IND
 
@@ -937,7 +937,7 @@ def getDB(update = False, correction = 'fix'):
     global DB
     if 'AMB' not in globals(): getAMB()
     if 'IND' not in globals(): getIND()
-    if not os.path.isfile('./_db/robustDBs/DB.pkl'):
+    if not os.path.isfile('./data/robustDBs/DB.pkl'):
         print('Keine Datenbank gefunden. Eine neue wird erstetllt.')
         update = True
     if update:
@@ -1013,11 +1013,11 @@ def getDB(update = False, correction = 'fix'):
         DB.columns = DB.columns.set_names(['bui', 'app', 'room', 'value'])
         DB.sort_index(axis=1, inplace=True)
         DB.sort_index(axis=0, inplace=True)
-        DB.to_pickle('./_db/robustDBs/DB.pkl')
+        DB.to_pickle('./data/robustDBs/DB.pkl')
 
     else:
         print('Lade gespeicherte Datenbank...                                                                ')
-        DB = pd.read_pickle('./_db/robustDBs/DB.pkl')
+        DB = pd.read_pickle('./data/robustDBs/DB.pkl')
     print('Laden vollständig...                                                                        ', end='\r')
     return DB
 
@@ -1041,8 +1041,8 @@ def calculatePMVPPD(update=False, **kwargs):
     if 'DB' not in globals():
         getDB()
 
-    if os.path.isfile('./_db/robustDBs/PMV_PPD_params.pkl'):
-        params = pd.read_pickle('./_db/robustDBs/PMV_PPD_params.pkl').to_dict()
+    if os.path.isfile('./data/robustDBs/PMV_PPD_params.pkl'):
+        params = pd.read_pickle('./data/robustDBs/PMV_PPD_params.pkl').to_dict()
     else:
         params = {'vair': 0.15,'clo_winter': 1.0,'clo_summer': 0.5, 'met_SZ': 1.0, 'met_rest': 1.2}
 
@@ -1054,7 +1054,7 @@ def calculatePMVPPD(update=False, **kwargs):
         else:
             print(f'{key} wurde nicht korrekt definiert - Standardwert wid verwendet. Erlaubte Parameter sind: {list(params.keys())}')
 
-    if not os.path.isfile('./_db/robustDBs/PMV_PPD.pkl'):
+    if not os.path.isfile('./data/robustDBs/PMV_PPD.pkl'):
         update = True
     if update: 
         print('Berechne PMV und PPD für Schlafzimmer und Wohnzimmer')
@@ -1091,12 +1091,12 @@ def calculatePMVPPD(update=False, **kwargs):
             df = pd.concat([df, pd.DataFrame(results, index=df.index)], axis=1)
             dfs[(bui, app, room)] = df
         ThermalComfort = pd.concat(dfs,axis=1).rename_axis(['bui', 'app', 'room', 'value'], axis=1).asfreq('H')
-        pd.Series(params).to_pickle('./_db/robustDBs/PMV_PPD_params.pkl')
-        ThermalComfort.to_pickle('./_db/robustDBs/PMV_PPD.pkl')
+        pd.Series(params).to_pickle('./data/robustDBs/PMV_PPD_params.pkl')
+        ThermalComfort.to_pickle('./data/robustDBs/PMV_PPD.pkl')
     else:
         print('Öffne PMV-PPD Datenbank...')
-        ThermalComfort = pd.read_pickle('./_db/robustDBs/PMV_PPD.pkl')
-        params = pd.read_pickle('./_db/robustDBs/PMV_PPD_params.pkl')
+        ThermalComfort = pd.read_pickle('./data/robustDBs/PMV_PPD.pkl')
+        params = pd.read_pickle('./data/robustDBs/PMV_PPD_params.pkl')
     return ThermalComfort, params
 
 # ===== ===== ===== LÜFTUNG ===== ===== ===== =====
@@ -1104,7 +1104,7 @@ def createLüftungsDB(update=False):
     global LüftungsDB
     if 'DB' not in globals():
         getDB()
-    if not os.path.isfile('./_db/robustDBs/LüftungsDB_A.pkl'):
+    if not os.path.isfile('./data/robustDBs/LüftungsDB_A.pkl'):
         update = True
     if update:
         print('Aktualisiere LüftungsDB...')
@@ -1148,10 +1148,10 @@ def createLüftungsDB(update=False):
                         dfs[roomID] = df
         LüftungsDB = pd.concat(dfs).rename(columns={'aggMINMAX':'timedelta'})
         LüftungsDB.index.set_names(['bui', 'app', 'room', 'id'], inplace=True)
-        LüftungsDB.to_pickle('./_db/robustDBs/LüftungsDB_A.pkl')
+        LüftungsDB.to_pickle('./data/robustDBs/LüftungsDB_A.pkl')
     else:
         print('Lade gespeicherte LüftungsDB...')
-        LüftungsDB = pd.read_pickle('./_db/robustDBs/LüftungsDB_A.pkl')
+        LüftungsDB = pd.read_pickle('./data/robustDBs/LüftungsDB_A.pkl')
     return LüftungsDB
 
 def getLüftungen():
@@ -1302,8 +1302,8 @@ def getLüftungsDatasets(bui, app, room, _id=None, batch=False):
     return _id, df_airnode, df, data
 
 def getLüftungsStats(update=False):
-    if not update and os.path.isfile('./_db/robustDBs/LüftungsDB_B.pkl'):
-        df = pd.read_pickle('./_db/robustDBs/LüftungsDB_B.pkl')
+    if not update and os.path.isfile('./data/robustDBs/LüftungsDB_B.pkl'):
+        df = pd.read_pickle('./data/robustDBs/LüftungsDB_B.pkl')
     else:
         dfs = {}
         for bui in BUID:
@@ -1331,7 +1331,7 @@ def getLüftungsStats(update=False):
         df['TD_rise_open'] = (pd.to_datetime(df.idx_closing) - pd.to_datetime(df.idx_Tmin))
         df.sort_index(axis=1, inplace=True)
         df.head()
-        df.to_pickle('./_db/robustDBs/LüftungsDB_B.pkl')
+        df.to_pickle('./data/robustDBs/LüftungsDB_B.pkl')
     return df
 
 
