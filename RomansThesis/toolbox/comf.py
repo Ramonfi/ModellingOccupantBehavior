@@ -746,6 +746,7 @@ class hxdiagramm():
         self._kind = kind
         self._rc = plt.rcParams
         self._comfdesc = 'annot'
+        self.timespan = []
         self.cbar = cbar
         self.scale = 'log'
         if self.scale == 'log':
@@ -762,7 +763,6 @@ class hxdiagramm():
 
         if 'print_timespan' in kwargs:
             self.print_timespan = kwargs['print_timespan']
-            self.timespan = []
             del kwargs['print_timespan']
         else:
             self.print_timespan = False

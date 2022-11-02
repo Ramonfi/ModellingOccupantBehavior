@@ -3,3 +3,6 @@ Digitatler Anhang zur Masterarbeit "Entwicklung probabilistischer Modelle zur Ab
 
 ## Installation
 
+## Datenbanken
+
+Die über das Paket "eb-scripts" erstellten Rohdaten müssen im Ordner ./_db/eb-database abgelegt werden.

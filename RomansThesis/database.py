@@ -260,6 +260,7 @@ def scan_eb_folder(dir_db = './_db/eb-database'):
                     if bui not in files[meter]:
                         files[meter][bui] = {}
                     files[meter][bui][fn.rsplit('_',1)[-1].split('.')[0]] = os.path.join(os.path.join(path), fn)
+    return files
 
 #############################       LESE DATENSÄTZE EIN         ###################################
 def getFensterDatenbank(bui=None, app=None, IO=True):
@@ -429,7 +430,7 @@ def getEnergymeter(bui, app):
             EM[col] = EM[col] - minval
     return {col: EM[(app, col)].rename((bui, app, 'WE')) for col in EM[app]}
 
-def getAMB(update=False):
+def getAMB(update = False):
     global AMB
     if 'files' not in globals():
         scan_eb_folder()
@@ -478,7 +479,7 @@ def getAMB(update=False):
     return AMB
 
 ### TinkerForge Raumklima DB
-def getIND(update=False):
+def getIND(update = False):
     global IND
     if 'files' not in globals():
         scan_eb_folder()
@@ -591,7 +592,7 @@ def getIND(update=False):
 
 #############################       PREPROCESSING         ###################################
     
-def getCleanTRHdata(bui, app, db=None, sensortype=None, correction='fix', correction_except=['B'], **kwargs):
+def preprocessTRH(bui, app, db=None, sensortype=None, correction='fix', correction_except=['B'], **kwargs):
     if correction is not None:
         if correction == 'fix':
             KORREKTUR = pd.read_csv('./data/KorrekturFaktoren_fix.csv', index_col=[0])
@@ -656,43 +657,22 @@ def getTHK(db=None, drop=True, Wertebereich=(0, 100), **kwargs):
         df = df[(df.gt(Wertebereich[0])) & df.lt(Wertebereich[1])]
     return df
 
-# def removeUnoccupied(df):
-#     '''
-#     ToDo:
-
-#     MATCH INDICES INSTEAD OF BUID AND APPS!!!!
-#     '''
-
-#     try:
-#         einzugsdaten = pd.read_csv('./data/eb_Einzugsdaten.csv',sep=';', index_col=[0], header=[0,1]).unstack().dropna().reset_index().drop(0,axis=1)
-#         einzugsdaten.columns = ['bui','app','Einzug']
-#         einzugsdaten.set_index(['bui', 'app'],inplace=True)
-#         Einzug = pd.DataFrame((pd.to_datetime(einzugsdaten['Einzug'], format='%d.%m.%Y')).dt.tz_localize('Europe/Berlin'))
-#     except FileNotFoundError:
-#         print('Es wurde keine Datei mit Einzugsdaten gefunden. Es werden alle gefundenen Datensätze verwendet.')
-#     for bui in BUID:
-#         for app in APPS:
-#             try:
-#                 df.loc[:Einzug.loc[(bui, app)].max(),(bui,app)] = np.NaN
-#             except KeyError:
-#                 continue
-#     return df
 
 def removeUnoccupied(df):
-    try:
-        einzugsdaten = pd.read_csv('./data/eb_Einzugsdaten.csv',sep=';', index_col=[0], header=[0,1]).unstack().dropna().reset_index().drop(0,axis=1)
-        einzugsdaten.columns = ['bui','app','Einzug']
-        einzugsdaten.set_index(['bui', 'app'],inplace=True)
-        Einzug = pd.DataFrame((pd.to_datetime(einzugsdaten['Einzug'], format='%d.%m.%Y')).dt.tz_localize('Europe/Berlin'))
-    except FileNotFoundError:
-        print('Es wurde keine Datei mit Einzugsdaten gefunden. Es werden alle gefundenen Datensätze verwendet.')
-    match = {item.name: lvl for lvl, items in enumerate(df.columns.levels) for item in Einzug.index.levels if (items.isin(item)).any()==True}
+    # try:
+    #     einzugsdaten = pd.read_csv('./data/eb_Einzugsdaten.csv',sep=';', index_col=[0], header=[0,1]).unstack().dropna().reset_index().drop(0,axis=1)
+    #     einzugsdaten.columns = ['bui','app','Einzug']
+    #     einzugsdaten.set_index(['bui', 'app'],inplace=True)
+    #     Einzug = pd.DataFrame((pd.to_datetime(einzugsdaten['Einzug'], format='%d.%m.%Y')).dt.tz_localize('Europe/Berlin'))
+    # except FileNotFoundError:
+    #     print('Es wurde keine Datei mit Einzugsdaten gefunden. Es werden alle gefundenen Datensätze verwendet.')
+    match = {item.name: lvl for lvl, items in enumerate(df.columns.levels) for item in style.STARTDATES.index.levels if (items.isin(item)).any()==True}
     for col, group in df.groupby(level=list(match.values()), axis=1):
-        df.loc[:Einzug.at[col, 'Einzug'], col] = np.NaN
+        df.loc[:style.STARTDATES.at[col, 'Einzug'], col] = np.NaN
     return df
 
 
-def getWindowEvents(df):
+def preprocessWindowSignals(df):
     s = df.squeeze().copy()
     window = s.name
     # Räume auf und entferne Fehlerhafte Messwerte.
@@ -703,6 +683,9 @@ def getWindowEvents(df):
     opening = _df.set_index('Start')['Zustand']
     closing = - _df.set_index('End')['Zustand']
     return opening, closing, data
+
+
+#############################       SIGNALS         ###################################
 
 def getAnwesenheit(bui, app, db=None, date=None, plot=False, **kwargs):
     if not date and not plot: m = IDX[:]
@@ -730,7 +713,7 @@ def getAnwesenheit(bui, app, db=None, date=None, plot=False, **kwargs):
     _window = {'IO':[], 'data':[]}
     for (room, window), data in _df.filter(like='Fenster').groupby(level=[0,1], axis=1):
         if len(data[room].dropna()) > 0:
-            opening, closing, df = getWindowEvents(data[room])
+            opening, closing, df = preprocessWindowSignals(data[room])
             _window['IO'].append([opening, closing])
             _window['data'].append(df)
     win_open = pd.concat(list(map(list, zip(*_window['IO'])))[0])
@@ -856,7 +839,7 @@ def getHKIO(bui, app, db=None, Fenster=None, plot=False, correction='fix', **plo
             db = IND
 
     # Extrahiere Raumtemperatur
-    _Tair = getCleanTRHdata(bui, app,db=db, sensortype='Tair', correction=False)
+    _Tair = preprocessTRH(bui, app,db=db, sensortype='Tair', correction=False)
 
     # Extrahiere Heizkörpertemperatur
     _Thk = getTHK(db, bui=bui, app=app, drop=True)
@@ -950,7 +933,7 @@ def getHKIO(bui, app, db=None, Fenster=None, plot=False, correction='fix', **plo
 
 #############################       ERSTELLE DATENBANK         ###################################
 
-def getDB(update=False, correction='fix'):
+def getDB(update = False, correction = 'fix'):
     global DB
     if 'AMB' not in globals(): getAMB()
     if 'IND' not in globals(): getIND()
@@ -972,9 +955,9 @@ def getDB(update=False, correction='fix'):
                 Rooms = DATA.columns.get_level_values(0).unique().to_list() # ermittle Räume in aktueller Wohnung
                 Rooms.remove('WE')
                 # Extrahiere Raumtemperatur
-                _Tair = getCleanTRHdata(db=_ind, bui=bui, app=app, sensortype='Tair', correction=False)
+                _Tair = preprocessTRH(db=_ind, bui=bui, app=app, sensortype='Tair', correction=False)
                 # Extrahiere Luftfeuchte
-                _Rh = getCleanTRHdata(db=_ind, bui=bui, app=app, sensortype='Rh', correction = correction)
+                _Rh = preprocessTRH(db=_ind, bui=bui, app=app, sensortype='Rh', correction = correction)
                 DF.append(_Rh)
                 DF.append(pd.concat({'g_abs': tb.comf.g_abs(_Tair.droplevel(1, axis=1), _Rh.droplevel(1, axis=1))}, axis=1).swaplevel(axis=1))
                 # Extrahiere CO2-Konzentration
@@ -993,7 +976,7 @@ def getDB(update=False, correction='fix'):
                     # Lege für jeden Raum eine Liste an...
                     if room not in Fenster: Fenster[room] = {'IO':[], 'data':[]} 
                     if len(group[room].dropna()) > 0:
-                        opening, closing, _df = getWindowEvents(group[room])
+                        opening, closing, _df = preprocessWindowSignals(group[room])
                         Fenster[room]['IO'].append([opening, closing])  # Sammle Öffnungen und Schließungen
                         Fenster[room]['data'].append(_df)               # Sammle kontinuierlichen Fensterstatus
                 # Forme Fensterdaten um.

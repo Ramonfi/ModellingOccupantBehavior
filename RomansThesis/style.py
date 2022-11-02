@@ -69,7 +69,7 @@ SENSORS = pd.Series({
     'Fenster West [M]-B':'SENSOR_1min'
     }).sort_index()
 
-sensorkind = pd.Series({
+sensor_timesteps = pd.Series({
     'HK_IO': 0,
     'Rh':1,
     'Rh_amb':1,
@@ -101,7 +101,7 @@ sensorkind = pd.Series({
     'Fenster West [M]-B':1
     }).sort_index()
 
-sensortypes = pd.Series({
+sensor_types = pd.Series({
     'HK_IO': 'binär',
     'Rh': 'stetig',
     'Rh_amb': 'stetig',
@@ -133,7 +133,6 @@ sensortypes = pd.Series({
     'Fenster West [M]-B': 'binär'
 }).sort_index()
 
-
 sensor_locations = {'Anwesenheit': ['N_WE', 'O_WE', 'S_WE'],
                     'CO2': ['N_SZ', 'O_SWK', 'S_SZ'],
                     'Fenster': ['N_K', 'N_SZ', 'N_WZ', 'O_SWK', 'S_K', 'S_SZ', 'S_WZ'],
@@ -161,6 +160,30 @@ sensor_locations = {'Anwesenheit': ['N_WE', 'O_WE', 'S_WE'],
                     'Warmwasser': ['N_WE', 'O_WE', 'S_WE'],
                     'Wärmemenge': ['N_WE', 'O_WE', 'S_WE'],
                     'g_abs': ['N_B',  'N_K',  'N_SZ',  'N_WZ',  'O_B',  'O_SWK',  'S_B',  'S_K',  'S_SZ', 'S_WZ']}
+
+class SENSOR():
+    def __init__(self, Name, timestep, location, mode):
+        self.Name = Name
+        self.timestep = timestep
+        self.location = location
+        self.type = mode
+    
+    def __repr__(self):
+        return f"{self.Name}_{self.timestep}min"
+
+STARTDATES = pd.DataFrame({
+    'Einzug': {
+        ('MH', 'N'): pd.Timestamp('2021-05-01 00:00:00+0200', tz='Europe/Berlin'),
+        ('MW', 'N'): pd.Timestamp('2021-04-01 00:00:00+0200', tz='Europe/Berlin'),
+        ('LB', 'N'): pd.Timestamp('2020-07-01 00:00:00+0200', tz='Europe/Berlin'),
+        ('MH', 'O'): pd.Timestamp('2020-10-01 00:00:00+0200', tz='Europe/Berlin'),
+        ('MW', 'O'): pd.Timestamp('2020-10-01 00:00:00+0200', tz='Europe/Berlin'),
+        ('LB', 'O'): pd.Timestamp('2020-07-01 00:00:00+0200', tz='Europe/Berlin'),
+        ('MH', 'S'): pd.Timestamp('2021-06-01 00:00:00+0200', tz='Europe/Berlin'),
+        ('MW', 'S'): pd.Timestamp('2021-03-01 00:00:00+0100', tz='Europe/Berlin'),
+        ('LB', 'S'): pd.Timestamp('2020-07-01 00:00:00+0200', tz='Europe/Berlin')
+        }
+  }).rename_axis(['bui', 'app'])
 
 TexMapper = {
     'CO2': r'$CO_2$', 
